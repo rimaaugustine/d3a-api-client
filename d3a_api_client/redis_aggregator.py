@@ -70,6 +70,8 @@ class RedisAggregator:
             self._selected_by_device(data)
 
     def _events_callback_dict(self, message):
+        print(f"-------")
+        print(f"_events_callback_dict")
         payload = json.loads(message['data'])
         if "event" in payload and payload['event'] == 'market':
             self._on_market_cycle(payload)

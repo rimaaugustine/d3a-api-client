@@ -21,13 +21,14 @@ class APIClientInterface(ABC):
         pass
 
     @abstractmethod
-    def register(self, is_blocking):
+    def register(self, is_blocking, is_before_launch):
         """
         Registers the client to a D3A endpoint. According to the client might be part of
         the constructor, to allow the client to automatically register when creating
         the client object.
         :param is_blocking: Controls whether the client should wait for the registration process
         to finish or to not wait and poll manually or get notified by the event callback.
+        is_before_launch: Client initiated before the launch of simulation
         :return: None
         """
         pass

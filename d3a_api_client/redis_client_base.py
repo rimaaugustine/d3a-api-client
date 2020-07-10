@@ -37,7 +37,8 @@ class Commands(Enum):
 
 
 class RedisClient(APIClientInterface):
-    def __init__(self, area_id, client_id, autoregister=True, redis_url='redis://localhost:6379'):
+    def __init__(self, area_id, client_id, autoregister=True, redis_url='redis://localhost:6379',
+                 is_before_launch=True, is_blocking=True):
         super().__init__(area_id, client_id, autoregister, redis_url)
         self.redis_db = StrictRedis.from_url(redis_url)
         self.pubsub = self.redis_db.pubsub()
@@ -50,7 +51,7 @@ class RedisClient(APIClientInterface):
         self._subscribe_to_response_channels()
         self.executor = ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
         if autoregister:
-            self.register(is_blocking=True)
+            self.register(is_blocking=is_blocking, is_before_launch=is_before_launch)
 
     def _subscribe_to_response_channels(self):
         channel_subs = {
@@ -68,12 +69,16 @@ class RedisClient(APIClientInterface):
         self.pubsub.subscribe(**channel_subs)
         self.pubsub.run_in_thread(daemon=True)
 
-    def register(self, is_blocking=False):
+    def register(self, is_blocking=False, is_before_launch=False):
         logging.info(f"Trying to register to {self.area_id} as client {self.client_id}")
         if self.is_active:
             raise RedisAPIException(f'API is already registered to the market.')
         data = {"name": self.client_id, "transaction_id": str(uuid.uuid4())}
-        self.redis_db.publish(f'{self.area_id}/register_participant', json.dumps(data))
+        if is_before_launch:
+            self.redis_db.set(f'{self.area_id}/register_participant',
+                              json.dumps({'data': json.dumps(data)}))
+        else:
+            self.redis_db.publish(f'{self.area_id}/register_participant', json.dumps(data))
         self._blocking_command_responses["register"] = data
 
         if is_blocking:
@@ -86,6 +91,7 @@ class RedisClient(APIClientInterface):
                     f'has been completed.')
 
     def unregister(self, is_blocking=False):
+
         logging.info(f"Trying to unregister from {self.area_id} as client {self.client_id}")
 
         if not self.is_active:
@@ -138,10 +144,10 @@ class RedisClient(APIClientInterface):
             return any(command == command_type and
                        "transaction_id" in data and data["transaction_id"] == transaction_id
                        for command, data in self._blocking_command_responses.items())
-        logging.info(f"Command {command_type} waiting for response...")
+        logging.debug(f"Command {command_type} waiting for response...")
         wait_until_timeout_blocking(check_if_command_response_received, timeout=120)
         command_output = self._blocking_command_responses.pop(command_type)
-        logging.info(f"Command {command_type} got response {command_output}")
+        logging.debug(f"Command {command_type} got response {command_output}")
         return command_output
 
     def _generate_command_response_callback(self, command_type):
@@ -178,12 +184,12 @@ class RedisClient(APIClientInterface):
 
     @registered_connection
     def bid_energy(self, energy, price):
-        logging.info(f"Client tries to place a bid for {energy} kWh at {price} cents.")
+        logging.debug(f"Client tries to place a bid for {energy} kWh at {price} cents.")
         return self._publish_and_wait(Commands.BID, {"energy": energy, "price": price})
 
     @registered_connection
     def bid_energy_rate(self, energy, rate):
-        logging.info(f"Client tries to place a bid for {energy} kWh at {rate} cents/kWh.")
+        logging.debug(f"Client tries to place a bid for {energy} kWh at {rate} cents/kWh.")
         return self._publish_and_wait(Commands.BID, {"energy": energy, "price": rate * energy})
 
     @registered_connection
@@ -241,7 +247,7 @@ class RedisClient(APIClientInterface):
 
     def _on_market_cycle(self, msg):
         message = json.loads(msg["data"])
-        logging.info(f"A new market was created. Market information: {message}")
+        logging.debug(f"A new market was created. Market information: {message}")
 
         def executor_function():
             self.on_market_cycle(message)
@@ -249,7 +255,7 @@ class RedisClient(APIClientInterface):
 
     def _on_tick(self, msg):
         message = json.loads(msg["data"])
-        logging.info(f"Time has elapsed on the device. Progress info: {message}")
+        logging.debug(f"Time has elapsed on the device. Progress info: {message}")
 
         def executor_function():
             self.on_tick(message)
@@ -257,7 +263,7 @@ class RedisClient(APIClientInterface):
 
     def _on_trade(self, msg):
         message = json.loads(msg["data"])
-        logging.info(f"A trade took place on the device. Trade information: {message}")
+        logging.debug(f"A trade took place on the device. Trade information: {message}")
 
         def executor_function():
             self.on_trade(message)

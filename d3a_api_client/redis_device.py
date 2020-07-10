@@ -10,13 +10,17 @@ class RedisAPIException(Exception):
 
 
 class RedisDeviceClient(RedisClient):
-    def __init__(self, device_id, autoregister=True, redis_url='redis://localhost:6379'):
+    def __init__(self, device_id, autoregister=True, redis_url='redis://localhost:6379',
+                 is_before_launch=True, is_blocking=True):
         self.device_id = device_id
         self._transaction_id_buffer = []
-        super().__init__(device_id, None, autoregister, redis_url)
+        self.is_aggregator_controlled = False
+        super().__init__(device_id, None, autoregister, redis_url, is_before_launch, is_blocking)
 
     def _on_register(self, msg):
+        print(f"_on_register")
         message = json.loads(msg["data"])
+        print(f"message: {message}")
         self.device_uuid = message['device_uuid']
         self._check_buffer_message_matching_command_and_id(message)
         logging.info(f"Client was registered to the device: {message}")
@@ -72,6 +76,7 @@ class RedisDeviceClient(RedisClient):
                 )
                 logging.info(f"DEVICE: {self.device_uuid} has selected "
                              f"AGGREGATOR: {aggregator_uuid}")
+                self.is_aggregator_controlled = True
                 return transaction_id
             except AssertionError:
                 raise RedisAPIException(f'API has timed out.')

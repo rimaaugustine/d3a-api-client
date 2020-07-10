@@ -6,6 +6,9 @@ from d3a_api_client.redis_device import RedisDeviceClient
 from d3a_interface.constants_limits import DATE_TIME_FORMAT
 from d3a_api_client.redis_market import RedisMarketClient
 
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
 
 class AutoAggregator(RedisAggregator):
 
@@ -57,17 +60,18 @@ class AutoAggregator(RedisAggregator):
         logging.info(f"AGGREGATORS_BATCH_RESPONSE: {market_stats}")
 
 
-aggregator = AutoAggregator(
-    aggregator_name="faizan_aggregator"
-)
-
-# aggregator.delete_aggregator(is_blocking=True)
 
 
 # Connects one client to the load device
-load = RedisDeviceClient('load', autoregister=True)
+load = RedisDeviceClient('load', autoregister=True, is_before_launch=True, is_blocking=True)
 # Connects a second client to the pv device
-pv = RedisDeviceClient('pv', autoregister=True)
+pv = RedisDeviceClient('pv', autoregister=True, is_before_launch=False, is_blocking=True)
+
+aggregator = AutoAggregator(
+    aggregator_name="faizan_aggregator"
+)
+# aggregator.delete_aggregator(is_blocking=True)
+
 
 selected = load.select_aggregator(aggregator.aggregator_uuid)
 logging.info(f"SELECTED: {selected}")
