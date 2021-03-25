@@ -26,7 +26,7 @@ setup(
     author_email='d3a@gridsingularity.com',
     url='https://github.com/gridsingularity/d3a-api-client',
     version=VERSION,
-    packages=find_packages(where=".", exclude=["tests"]),
+    packages=find_packages(where=".", exclude=["tests", "unit_test"]),
     package_dir={"d3a_api_client": "d3a_api_client"},
     package_data={},
     install_requires=REQUIREMENTS,
