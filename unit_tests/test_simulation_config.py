@@ -3,11 +3,12 @@ import os
 import inspect
 from jsonschema import ValidationError
 
+from cli import create_simulation_config_path
 import d3a_api_client
 from d3a_api_client.utils import get_simulation_config, DOMAIN_NAME_FROM_ENV, \
     WEBSOCKET_DOMAIN_NAME_FROM_ENV, SIMULATION_ID_FROM_ENV
 from d3a_interface.api_simulation_config import ApiSimulationConfigException
-from cli import create_simulation_config_path
+from unit_tests import unittest_path
 
 
 class TestSimulationInfo(unittest.TestCase):
@@ -26,9 +27,10 @@ class TestSimulationInfo(unittest.TestCase):
         assert websockets_domain_name == WEBSOCKET_DOMAIN_NAME_FROM_ENV
 
     def test_simulation_info_file_is_correctly_parsed_json_file(self):
+        print(f"unittest_path: {unittest_path}")
         os.environ['SIMULATION_CONFIG_FILE_PATH'] = os.path.join(
-            self.api_client_path,
-            "resources/api-client-summary-84d221fa-46e1-49e0-823b-26cfb3425a5a.json"
+            unittest_path,
+            "fixtures/api-client-summary-84d221fa-46e1-49e0-823b-26cfb3425a5a.json"
         )
         simulation_id, domain_name, websockets_domain_name = get_simulation_config()
         assert simulation_id == "84d221fa-46e1-49e0-823b-26cfb3425a5a"
@@ -38,8 +40,8 @@ class TestSimulationInfo(unittest.TestCase):
     def test_assertion_is_raised_if_incorrect_info_is_provided(self):
         with self.assertRaises(ValidationError):
             os.environ['SIMULATION_CONFIG_FILE_PATH'] = os.path.join(
-                self.api_client_path,
-                "resources/malformed-api-client-summary-84d221fa-46e1-49e0-823b-26cfb3425a5a.json"
+                unittest_path,
+                "fixtures/malformed-api-client-summary-84d221fa-46e1-49e0-823b-26cfb3425a5a.json"
             )
             get_simulation_config()
 
