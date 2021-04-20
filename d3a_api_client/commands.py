@@ -78,12 +78,19 @@ class ClientCommandBuffer:
     def grid_fees(self, area_uuid, fee_cents_kwh):
         return self._add_to_buffer(area_uuid, Commands.GRID_FEES, {"data": {"fee_const": fee_cents_kwh}})
 
+    def match_recommend(self, area_uuid, matched_pair_list):
+        print(f'match_recommend')
+        return self._add_to_buffer(area_uuid, Commands.MATCH_RECOMMEND,
+                                   {"data": {"match_pair": matched_pair_list}})
+
     def _add_to_buffer(self, area_uuid, action, args):
+        print(f'_add_to_buffer -- area_uuid{area_uuid} -- action {action}')
         if area_uuid and action:
             self._commands_buffer.append(
                 {area_uuid: {"type": command_enum_to_command_name(action)
                             if type(action) == Commands else action, **args, **args}})
             logging.debug("Added Command to buffer, updated buffer: ")
+            print(f'self._commands_buffer: {self._commands_buffer}')
             self.log_all_commands()
         return self
 
@@ -101,6 +108,7 @@ class ClientCommandBuffer:
         logging.debug(f"\n\n{tabulate(table_data, headers=table_headers, tablefmt='fancy_grid')}\n\n")
 
     def execute_batch(self):
+        print(f'--> execute_batch: {self._commands_buffer}')
         batch_command_dict = {}
         for command_dict in self._commands_buffer:
             area_uuid = list(command_dict.keys())[0]

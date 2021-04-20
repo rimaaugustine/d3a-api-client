@@ -40,9 +40,9 @@ aggregator = AutoAggregator(
     aggregator_name="aggregator"
 )
 
-house_1 = RedisMarketClient("house-1")
-selected = house_1.select_aggregator(aggregator.aggregator_uuid)
-logging.warning(f"SELECTED: {selected}")
+# house_1 = RedisMarketClient("house-1")
+# selected = house_1.select_aggregator(aggregator.aggregator_uuid)
+# logging.warning(f"SELECTED: {selected}")
 house_2 = RedisMarketClient("house-2")
 selected = house_2.select_aggregator(aggregator.aggregator_uuid)
 logging.warning(f"SELECTED: {selected}")

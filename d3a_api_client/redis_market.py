@@ -25,7 +25,7 @@ class RedisMarketClient:
             self.register(is_blocking=True)
 
     def register(self, is_blocking=False):
-        logging.info(f"Trying to register {self.area_slug}")
+        print(f"Trying to register {self.area_slug}")
         if self.is_active:
             raise RedisAPIException(f'API is already registered to the market.')
         data = {"name": self.area_slug, "transaction_id": str(uuid.uuid4())}
@@ -34,7 +34,8 @@ class RedisMarketClient:
 
         if is_blocking:
             try:
-                wait_until_timeout_blocking(lambda: self.is_active, timeout=120)
+                wait_until_timeout_blocking(lambda: self.is_active, timeout=10)
+                print(f'self.is_active: {self.is_active}')
             except AssertionError:
                 raise RedisAPIException(
                     f'API registration process timed out. Server will continue processing your '
@@ -178,6 +179,9 @@ class RedisMarketClient:
         logging.debug(f"Client tries to change grid fees.")
         self.redis_db.publish(f"{self._channel_prefix}/grid_fees", json.dumps({"fee_percent": fee_percent}))
         return self._wait_and_consume_command_response("grid_fees")
+
+    def post_match_recommendation(self, matched_list):
+        pass
 
     def last_market_dso_stats(self):
         logging.debug(f"Client tries to read dso_market_stats.")

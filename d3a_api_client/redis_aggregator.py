@@ -86,9 +86,11 @@ class RedisAggregator:
 
     def _events_callback_dict(self, message):
         payload = json.loads(message['data'])
+        # print(f'payload: {payload}')
         if "event" in payload and payload['event'] == 'market':
             self._on_market_cycle(payload)
         elif "event" in payload and payload["event"] == "tick":
+            print(f'tick')
             self._on_tick(payload)
         elif "event" in payload and payload["event"] == "trade":
             self._on_trade(payload)
@@ -138,6 +140,8 @@ class RedisAggregator:
                 raise RedisAPIException(f'API has timed out.')
 
     def _selected_by_device(self, message):
+        print(f'_selected_by_device: {message}')
+        print(f'self.accept_all_devices: {self.accept_all_devices}')
         if self.accept_all_devices:
             self.device_uuid_list.append(message["device_uuid"])
 
@@ -147,6 +151,8 @@ class RedisAggregator:
             self.device_uuid_list.remove(device_uuid)
 
     def _all_uuids_in_selected_device_uuid_list(self, uuid_list):
+        print(f'_all_uuids_in_selected_device_uuid_list: {uuid_list}')
+        print(f'self.device_uuid_list: {self.device_uuid_list}')
         for device_uuid in uuid_list:
             if device_uuid not in self.device_uuid_list:
                 logging.error(f"{device_uuid} not in list of selected device uuids {self.device_uuid_list}")
@@ -189,9 +195,11 @@ class RedisAggregator:
                 raise RedisAPIException(f'API registration process timed out.')
 
     def execute_batch_commands(self, is_blocking=True):
+        print(f'execute_batch_commands: {self.commands_buffer_length}')
         if not self.commands_buffer_length:
             return
         batch_command_dict = self._client_command_buffer.execute_batch()
+        print(f'batch_command_dict: {batch_command_dict}')
         self._client_command_buffer.clear()
         self._all_uuids_in_selected_device_uuid_list(batch_command_dict.keys())
         transaction_id = str(uuid.uuid4())
@@ -199,6 +207,8 @@ class RedisAggregator:
                            "aggregator_uuid": self.aggregator_uuid,
                            "batch_commands": batch_command_dict}
         batch_channel = f'external//aggregator/{self.aggregator_uuid}/batch_commands'
+        print(f'batch_channel: {batch_channel}')
+        print(f'batched_command: {batched_command}')
         self.redis_db.publish(batch_channel, json.dumps(batched_command))
         self._transaction_id_buffer.append(transaction_id)
         if is_blocking:

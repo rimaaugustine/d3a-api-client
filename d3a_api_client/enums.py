@@ -14,6 +14,7 @@ class Commands(Enum):
     GRID_FEES = 10
     MARKET_STATS = 11
     DSO_MARKET_STATS = 12
+    MATCH_RECOMMEND = 13
 
 
 command_enum_to_command_name_dict = {
@@ -28,7 +29,8 @@ command_enum_to_command_name_dict = {
     Commands.DEVICE_INFO: "device_info",
     Commands.GRID_FEES: "grid_fees",
     Commands.MARKET_STATS: "market_stats",
-    Commands.DSO_MARKET_STATS: "dso_market_stats"
+    Commands.DSO_MARKET_STATS: "dso_market_stats",
+    Commands.MATCH_RECOMMEND: "match_recommend"
 }
 
 
